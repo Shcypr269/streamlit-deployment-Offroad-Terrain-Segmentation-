@@ -6,6 +6,10 @@ import torchvision.transforms as transforms
 from PIL import Image
 import numpy as np
 import os
+import gc
+
+# Force PyTorch to cache downloaded models in the local directory
+os.environ["TORCH_HOME"] = "./.cache/torch"
 
 # ==============================
 # CONFIG
@@ -59,7 +63,7 @@ class SegmentationHeadConvNeXt(nn.Module):
 def load_model():
     """Load DINOv2 backbone and trained segmentation head."""
 
-    with st.spinner("🔄 Loading DINOv2 backbone..."):
+    with st.spinner("Loading DINOv2 backbone..."):
         # Load frozen backbone
         backbone = torch.hub.load(
             "facebookresearch/dinov2", "dinov2_vitb14_reg", trust_repo=True
@@ -94,14 +98,14 @@ def load_model():
         if os.path.exists(path):
             try:
                 checkpoint = torch.load(path, map_location=DEVICE, weights_only=False)
-                st.success(f"✅ Loaded checkpoint: {path}")
+                st.success(f"Loaded checkpoint: {path}")
                 break
             except Exception as e:
                 continue
 
     if checkpoint is None:
         st.error(
-            "❌ No checkpoint found! Please ensure model checkpoint is in the repository."
+            "No checkpoint found! Please ensure model checkpoint is in the repository."
         )
         st.info(
             """
@@ -129,10 +133,10 @@ def load_model():
             classifier.load_state_dict(checkpoint)
 
         classifier.eval()
-        st.success("✅ Model loaded successfully!")
+        st.success("Model loaded successfully!")
 
     except Exception as e:
-        st.error(f"❌ Error loading checkpoint: {str(e)}")
+        st.error(f"Error loading checkpoint: {str(e)}")
         st.stop()
 
     return backbone, classifier
@@ -220,12 +224,12 @@ def segment_image(image):
 st.set_page_config(
     page_title="Offroad Terrain Segmentation",
     layout="wide",
-    page_icon="🚜",
+    page_icon="",
     initial_sidebar_state="expanded",
 )
 
 # Header
-st.title("🚜 Offroad Terrain Segmentation")
+st.title("Offroad Terrain Segmentation")
 st.markdown(
     """
 AI-powered terrain segmentation for offroad environments using DINOv2 + Custom Decoder.
@@ -235,7 +239,7 @@ Upload an image to identify different terrain types in real-time.
 
 # Sidebar
 with st.sidebar:
-    st.header("ℹ️ Model Information")
+    st.header("Model Information")
     st.markdown(
         f"""
     - **Backbone**: DINOv2 ViT-B/14
@@ -247,7 +251,7 @@ with st.sidebar:
 
     st.markdown("---")
 
-    st.header("🎨 Class Legend")
+    st.header("Class Legend")
     for name, color in zip(CLASS_NAMES, CLASS_COLORS):
         col1, col2 = st.columns([1, 4])
         with col1:
@@ -259,7 +263,7 @@ with st.sidebar:
 
     st.markdown("---")
 
-    st.header("📖 About")
+    st.header("About")
     st.markdown(
         """
     This model segments offroad terrain into 10 categories including:
@@ -272,33 +276,38 @@ with st.sidebar:
 
 # Main content
 uploaded_file = st.file_uploader(
-    "📁 Upload an offroad terrain image",
+    "Upload an offroad terrain image",
     type=["jpg", "jpeg", "png"],
     help="Supported formats: JPG, JPEG, PNG",
 )
 
 if uploaded_file is not None:
-    # Load image
-    image = Image.open(uploaded_file)
+    # Use file ID to prevent re-running same image
+    file_id = uploaded_file.file_id
+    
+    if "current_file_id" not in st.session_state or st.session_state.current_file_id != file_id:
+        image = Image.open(uploaded_file)
+        with st.spinner("Segmenting terrain..."):
+            output_mask, prediction = segment_image(image)
+            
+        # Store in session state
+        st.session_state.current_file_id = file_id
+        st.session_state.image = image
+        st.session_state.output_mask = output_mask
+        st.session_state.prediction = prediction
 
-    # Display original and segmented side by side
+    # Display from session state
     col1, col2 = st.columns(2)
-
     with col1:
-        st.subheader("📷 Original Image")
-        st.image(image, use_container_width=True)
-
-    # Run segmentation
-    with st.spinner("🔄 Segmenting terrain..."):
-        output_mask, prediction = segment_image(image)
-
+        st.subheader("Original Image")
+        st.image(st.session_state.image, use_container_width=True)
     with col2:
-        st.subheader("🎨 Segmentation Result")
-        st.image(output_mask, use_container_width=True)
+        st.subheader("Segmentation Result")
+        st.image(st.session_state.output_mask, use_container_width=True)
 
     # Statistics
     st.markdown("---")
-    st.subheader("📊 Terrain Distribution")
+    st.subheader("Terrain Distribution")
 
     unique, counts = np.unique(prediction, return_counts=True)
     total_pixels = prediction.size
@@ -320,22 +329,22 @@ if uploaded_file is not None:
 
 else:
     # Instructions when no image is uploaded
-    st.info("👆 Upload an image to get started!")
+    st.info("Upload an image to get started!")
 
     st.markdown("---")
 
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.markdown("### 1️⃣ Upload")
+        st.markdown("### 1. Upload")
         st.markdown("Choose an offroad terrain image (JPG, JPEG, or PNG format)")
 
     with col2:
-        st.markdown("### 2️⃣ Process")
+        st.markdown("### 2. Process")
         st.markdown("The AI model will segment different terrain types automatically")
 
     with col3:
-        st.markdown("### 3️⃣ Analyze")
+        st.markdown("### 3. Analyze")
         st.markdown("View the segmentation map and terrain distribution statistics")
 
 # Footer
