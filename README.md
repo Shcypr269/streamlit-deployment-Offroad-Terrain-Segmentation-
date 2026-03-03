@@ -15,8 +15,6 @@ Advanced semantic segmentation system for offroad desert environments using DINO
 - [Technical Details](#technical-details)
 - [Results Analysis](#results-analysis)
 - [Future Improvements](#future-improvements)
-- [Citation](#citation)
-- [License](#license)
 
 ## Overview
 
