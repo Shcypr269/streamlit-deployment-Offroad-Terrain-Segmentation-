@@ -69,7 +69,7 @@ Input Image (672x378x3)
 │   - Parameters: 19M (trainable)     │
 └─────────────────────────────────────┘
     ↓
-Output Logits (672x378x10)
+Output Logits (672x378x10)                                
 ```
 
 ### Key Architectural Choices
