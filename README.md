@@ -51,7 +51,7 @@ This project implements a state-of-the-art semantic segmentation model for offro
 Input Image (672x378x3)
     ↓
 ┌─────────────────────────────────────┐
-│   DINOv2 ViT-B/14 (Frozen)         │
+│   DINOv2 ViT-B/14 (Frozen)          │
 │   - Patch size: 14x14               │
 │   - Output tokens: 48x27x768        │
 │   - Parameters: 86M (frozen)        │
@@ -59,11 +59,11 @@ Input Image (672x378x3)
     ↓
 ┌─────────────────────────────────────┐
 │   Custom Decoder (Trainable)        │
-│   ├─ Positional Encoding (64 ch)   │
-│   ├─ ASPP (multi-scale: 6,12,18)   │
-│   ├─ ConvNeXt Block 1              │
-│   ├─ ConvNeXt Block 2              │
-│   └─ Classifier (1x1 conv)         │
+│   ├─ Positional Encoding (64 ch)    │
+│   ├─ ASPP (multi-scale: 6,12,18)    │
+│   ├─ ConvNeXt Block 1               │
+│   ├─ ConvNeXt Block 2               │
+│   └─ Classifier (1x1 conv)          │
 │   - Parameters: 19M (trainable)     │
 └─────────────────────────────────────┘
     ↓
